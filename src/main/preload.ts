@@ -2,7 +2,12 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
-export type Channels = 'ipc-example';
+export type Channels =
+  | 'ipc-example'
+  | 'log-server:message'
+  | 'log-server:start'
+  | 'log-server:stop'
+  | 'log-server:list';
 
 const electronHandler = {
   ipcRenderer: {
@@ -20,6 +25,9 @@ const electronHandler = {
     },
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
+    },
+    invoke(channel: string, ...args: unknown[]): Promise<unknown> {
+      return ipcRenderer.invoke(channel, ...args);
     },
   },
 };

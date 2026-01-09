@@ -102,12 +102,16 @@
   },
   "dependencies": {
     "@electron/notarize": "^3.0.0",
+    "@types/express": "^4.17.25",
+    "@uiw/react-json-view": "^2.0.0-alpha.40",
     "electron-debug": "^4.1.0",
     "electron-log": "^5.3.2",
     "electron-updater": "^6.3.9",
+    "express": "^5.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.3.0"
+    "react-router-dom": "^7.3.0",
+    "react-split": "^2.0.14"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
