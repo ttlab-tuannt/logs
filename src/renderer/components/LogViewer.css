@@ -238,12 +238,15 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
+  width: 100%;
 }
 
 .entries-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: auto;
 }
 
 .entries-table thead {
@@ -284,26 +287,35 @@
 }
 
 .col-url {
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 200px;
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: none;
+  line-height: 1.5;
+  padding-right: 16px;
 }
 
 .col-method {
   width: 100px;
+  min-width: 80px;
+  white-space: nowrap;
 }
 
 .col-duration {
-  width: 100px;
+  width: 120px;
+  min-width: 100px;
   text-align: right;
   font-family: 'Courier New', monospace;
   color: #858585;
+  white-space: nowrap;
 }
 
 .col-status {
-  width: 80px;
+  width: 90px;
+  min-width: 80px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .method-badge {

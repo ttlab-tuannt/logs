@@ -487,9 +487,7 @@ function LogViewer() {
                             tabIndex={0}
                           >
                             <td className="col-url" title={entry.uri}>
-                              {entry.uri.length > 50
-                                ? `${entry.uri.substring(0, 50)}...`
-                                : entry.uri}
+                              {entry.uri}
                             </td>
                             <td className="col-method">
                               <span
@@ -595,6 +593,7 @@ function LogViewer() {
                                 <JsonView
                                   value={selectedEntry.requestHeaders}
                                   style={darkTheme}
+                                  collapsed
                                 />
                               ) : (
                                 <div className="empty-content">No headers</div>
@@ -621,6 +620,7 @@ function LogViewer() {
                                 <JsonView
                                   value={selectedEntry.requestData}
                                   style={darkTheme}
+                                  collapsed
                                 />
                               )}
                               {!selectedEntry.requestData &&
@@ -628,6 +628,7 @@ function LogViewer() {
                                   <JsonView
                                     value={selectedEntry.requestQueryParameters}
                                     style={darkTheme}
+                                    collapsed
                                   />
                                 )}
                               {!selectedEntry.requestData &&
@@ -658,6 +659,7 @@ function LogViewer() {
                                 <JsonView
                                   value={selectedEntry.responseData}
                                   style={darkTheme}
+                                  collapsed
                                 />
                               ) : (
                                 <div className="empty-content">
