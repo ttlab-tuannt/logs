@@ -380,6 +380,19 @@
   color: #fff;
 }
 
+.status-badge.status-error {
+  background: #c42b2b;
+  color: #fff;
+}
+
+.entry-row.error-row {
+  background: rgba(196, 43, 43, 0.08);
+}
+
+.entry-row.error-row:hover {
+  background: rgba(196, 43, 43, 0.12);
+}
+
 .empty-state {
   padding: 20px;
   text-align: center;

@@ -88,9 +88,17 @@ ipcMain.handle('log-server:start', async (_event, port: number) => {
           }
 
           res.status(200).send('OK');
-        } catch (error) {
-          console.error('Error processing log request:', error);
-          res.status(500).send('Error processing request');
+        } catch (error: unknown) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          console.error('Error processing log request:', err);
+          res.setHeader('Content-Type', 'application/json');
+          res.status(500).json({
+            error: {
+              status: 500,
+              message: err.message || 'Error processing request',
+              type: 'SERVER_ERROR',
+            },
+          });
         }
       } else {
         // For non-POST requests, return 404 or method not allowed

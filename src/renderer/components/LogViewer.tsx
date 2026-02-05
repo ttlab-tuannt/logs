@@ -25,6 +25,15 @@ interface LogResponse {
   data?: any;
 }
 
+/** Error payload from Dio logging interceptor (onError) */
+interface LogErrorPayload {
+  status?: number;
+  message?: string;
+  type?: string;
+  error?: unknown;
+  errors?: Array<Record<string, unknown>>;
+}
+
 interface MergedLogEntry {
   id: number | string;
   port: number;
@@ -39,6 +48,9 @@ interface MergedLogEntry {
   requestQueryParameters?: Record<string, string>;
   responseData?: any;
   responseMessage?: string;
+  /** True when this entry represents a failed request (Dio onError payload) */
+  isError?: boolean;
+  errorPayload?: LogErrorPayload;
 }
 
 interface Tab {
@@ -64,21 +76,26 @@ function LogViewer() {
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const filteredEntries =
-    activeTab?.entries.filter((entry) => {
-      if (!filter) return true;
-      const lowerFilter = filter.toLowerCase();
-      return (
-        entry.method.toLowerCase().includes(lowerFilter) ||
-        entry.uri.toLowerCase().includes(lowerFilter) ||
-        entry.statusCode?.toString().includes(lowerFilter) ||
-        JSON.stringify(entry.requestData || {})
-          .toLowerCase()
-          .includes(lowerFilter) ||
-        JSON.stringify(entry.responseData || {})
-          .toLowerCase()
-          .includes(lowerFilter)
-      );
-    }) || [];
+    activeTab?.entries.filter(      (entry) => {
+        if (!filter) return true;
+        const lowerFilter = filter.toLowerCase();
+        const errorStr = entry.errorPayload
+          ? JSON.stringify(entry.errorPayload).toLowerCase()
+          : '';
+        return (
+          entry.method.toLowerCase().includes(lowerFilter) ||
+          entry.uri.toLowerCase().includes(lowerFilter) ||
+          entry.statusCode?.toString().includes(lowerFilter) ||
+          (entry.responseMessage ?? '').toLowerCase().includes(lowerFilter) ||
+          errorStr.includes(lowerFilter) ||
+          JSON.stringify(entry.requestData || {})
+            .toLowerCase()
+            .includes(lowerFilter) ||
+          JSON.stringify(entry.responseData || {})
+            .toLowerCase()
+            .includes(lowerFilter)
+        );
+      }) || [];
 
   // Handle incoming log messages
   useEffect(() => {
@@ -104,9 +121,10 @@ function LogViewer() {
           const requestId = parsedData.id;
           if (!requestId) return prevTabs;
 
-          // Check if this is a request or response
+          // Check if this is a request, response, or error (Dio onError payload)
           const isRequest = parsedData.request !== undefined;
           const isResponse = parsedData.response !== undefined;
+          const isErrorPayload = parsedData.error !== undefined;
 
           return prevTabs.map((t) => {
             if (t.id !== tab.id) return t;
@@ -179,6 +197,61 @@ function LogViewer() {
                 responseMessage: response.message,
                 responseData: response.data,
                 duration: 0,
+              };
+              return { ...t, entries: [newEntry, ...t.entries] };
+            }
+
+            // Handle error payload (from Dart LoggingInterceptor.onError)
+            if (isErrorPayload && parsedData.error) {
+              const err = parsedData.error as LogErrorPayload;
+              if (existingEntryIndex >= 0) {
+                const entries = [...t.entries];
+                const existingEntry = entries[existingEntryIndex];
+                const requestTime = new Date(
+                  existingEntry.requestTimestamp,
+                ).getTime();
+                const responseTime = new Date(logData.timestamp).getTime();
+                const duration = responseTime - requestTime;
+                entries[existingEntryIndex] = {
+                  ...existingEntry,
+                  responseTimestamp: logData.timestamp,
+                  statusCode: err.status ?? undefined,
+                  responseMessage: err.message,
+                  responseData: err.errors
+                    ? { errors: err.errors, message: err.message }
+                    : {
+                        status: err.status,
+                        message: err.message,
+                        type: err.type,
+                        error: err.error,
+                      },
+                  duration,
+                  isError: true,
+                  errorPayload: err,
+                };
+                return { ...t, entries };
+              }
+              // Error without prior request (e.g. connection failed)
+              const newEntry: MergedLogEntry = {
+                id: requestId,
+                port: logData.port,
+                method: 'ERROR',
+                uri: '-',
+                requestTimestamp: logData.timestamp,
+                responseTimestamp: logData.timestamp,
+                statusCode: err.status,
+                responseMessage: err.message,
+                duration: 0,
+                responseData: err.errors
+                  ? { errors: err.errors, message: err.message }
+                  : {
+                      status: err.status,
+                      message: err.message,
+                      type: err.type,
+                      error: err.error,
+                    },
+                isError: true,
+                errorPayload: err,
               };
               return { ...t, entries: [newEntry, ...t.entries] };
             }
@@ -476,7 +549,7 @@ function LogViewer() {
                             key={entry.id}
                             className={`entry-row ${
                               selectedEntry?.id === entry.id ? 'selected' : ''
-                            }`}
+                            } ${entry.isError ? 'error-row' : ''}`}
                             onClick={() => handleEntryClick(entry)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
@@ -504,11 +577,21 @@ function LogViewer() {
                             <td className="col-status">
                               {entry.statusCode ? (
                                 <span
-                                  className={`status-badge status-${Math.floor(
-                                    entry.statusCode / 100,
-                                  )}xx`}
+                                  className={`status-badge ${
+                                    entry.isError &&
+                                    (entry.statusCode < 400 ||
+                                      entry.statusCode >= 600)
+                                      ? 'status-error'
+                                      : `status-${Math.floor(
+                                          entry.statusCode / 100,
+                                        )}xx`
+                                  }`}
                                 >
                                   {entry.statusCode}
+                                </span>
+                              ) : entry.isError ? (
+                                <span className="status-badge status-error">
+                                  ERR
                                 </span>
                               ) : (
                                 '-'
@@ -593,7 +676,7 @@ function LogViewer() {
                                 <JsonView
                                   value={selectedEntry.requestHeaders}
                                   style={darkTheme}
-                                  collapsed
+                                  collapsed={false}
                                 />
                               ) : (
                                 <div className="empty-content">No headers</div>
@@ -620,7 +703,7 @@ function LogViewer() {
                                 <JsonView
                                   value={selectedEntry.requestData}
                                   style={darkTheme}
-                                  collapsed
+                                  collapsed={false}
                                 />
                               )}
                               {!selectedEntry.requestData &&
@@ -628,7 +711,7 @@ function LogViewer() {
                                   <JsonView
                                     value={selectedEntry.requestQueryParameters}
                                     style={darkTheme}
-                                    collapsed
+                                    collapsed={false}
                                   />
                                 )}
                               {!selectedEntry.requestData &&
@@ -643,7 +726,11 @@ function LogViewer() {
                         {detailView === 'response' && (
                           <div className="detail-section">
                             <div className="detail-section-header">
-                              <h4>Response Data</h4>
+                              <h4>
+                                {selectedEntry.isError
+                                  ? 'Error Response'
+                                  : 'Response Data'}
+                              </h4>
                               {selectedEntry.responseData && (
                                 <button
                                   type="button"
