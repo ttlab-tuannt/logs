@@ -1,8 +1,67 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Split from 'react-split';
 import JsonView from '@uiw/react-json-view';
+import { basicTheme } from '@uiw/react-json-view/basic';
 import { darkTheme } from '@uiw/react-json-view/dark';
+import { githubDarkTheme } from '@uiw/react-json-view/githubDark';
+import { githubLightTheme } from '@uiw/react-json-view/githubLight';
+import { gruvboxTheme } from '@uiw/react-json-view/gruvbox';
+import { lightTheme } from '@uiw/react-json-view/light';
+import { monokaiTheme } from '@uiw/react-json-view/monokai';
+import { nordTheme } from '@uiw/react-json-view/nord';
+import { vscodeTheme } from '@uiw/react-json-view/vscode';
 import './LogViewer.css';
+
+const JSON_VIEW_THEME_KEY = 'logs-json-view-theme';
+type JsonViewThemeId =
+  | 'basic'
+  | 'dark'
+  | 'githubDark'
+  | 'githubLight'
+  | 'gruvbox'
+  | 'light'
+  | 'monokai'
+  | 'nord'
+  | 'vscode';
+const JSON_VIEW_THEMES: { id: JsonViewThemeId; label: string }[] = [
+  { id: 'dark', label: 'Dark' },
+  { id: 'light', label: 'Light' },
+  { id: 'basic', label: 'Basic' },
+  { id: 'githubDark', label: 'GitHub Dark' },
+  { id: 'githubLight', label: 'GitHub Light' },
+  { id: 'gruvbox', label: 'Gruvbox' },
+  { id: 'monokai', label: 'Monokai' },
+  { id: 'nord', label: 'Nord' },
+  { id: 'vscode', label: 'VSCode' },
+];
+const JSON_VIEW_THEME_MAP: Record<
+  JsonViewThemeId,
+  React.CSSProperties
+> = {
+  basic: basicTheme,
+  dark: darkTheme,
+  githubDark: githubDarkTheme,
+  githubLight: githubLightTheme,
+  gruvbox: gruvboxTheme,
+  light: lightTheme,
+  monokai: monokaiTheme,
+  nord: nordTheme,
+  vscode: vscodeTheme,
+};
+const VALID_JSON_VIEW_THEMES: JsonViewThemeId[] = [
+  'basic',
+  'dark',
+  'githubDark',
+  'githubLight',
+  'gruvbox',
+  'light',
+  'monokai',
+  'nord',
+  'vscode',
+];
+function isValidJsonViewTheme(s: string): s is JsonViewThemeId {
+  return VALID_JSON_VIEW_THEMES.includes(s as JsonViewThemeId);
+}
 
 interface LogRequest {
   id: number | string;
@@ -73,6 +132,25 @@ function LogViewer() {
   const [detailView, setDetailView] = useState<
     'headers' | 'request' | 'response'
   >('headers');
+  const [jsonViewTheme, setJsonViewTheme] = useState<JsonViewThemeId>(() => {
+    try {
+      const saved = localStorage.getItem(JSON_VIEW_THEME_KEY);
+      if (saved && isValidJsonViewTheme(saved)) return saved;
+    } catch {
+      // ignore
+    }
+    return 'dark';
+  });
+
+  const jsonViewStyle = JSON_VIEW_THEME_MAP[jsonViewTheme];
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(JSON_VIEW_THEME_KEY, jsonViewTheme);
+    } catch {
+      // ignore
+    }
+  }, [jsonViewTheme]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const filteredEntries =
@@ -450,6 +528,26 @@ function LogViewer() {
             Start Server
           </button>
         </div>
+        <div className="json-view-theme-setting">
+          <label htmlFor="json-view-theme" className="theme-label">
+            JSON viewer theme
+          </label>
+          <select
+            id="json-view-theme"
+            value={jsonViewTheme}
+            onChange={(e) =>
+              setJsonViewTheme(e.target.value as JsonViewThemeId)
+            }
+            className="theme-select"
+            aria-label="JSON viewer theme"
+          >
+            {JSON_VIEW_THEMES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {tabs.length > 0 && (
@@ -675,7 +773,7 @@ function LogViewer() {
                               {selectedEntry.requestHeaders ? (
                                 <JsonView
                                   value={selectedEntry.requestHeaders}
-                                  style={darkTheme}
+                                  style={jsonViewStyle}
                                   collapsed={false}
                                 />
                               ) : (
@@ -702,7 +800,7 @@ function LogViewer() {
                               {selectedEntry.requestData && (
                                 <JsonView
                                   value={selectedEntry.requestData}
-                                  style={darkTheme}
+                                  style={jsonViewStyle}
                                   collapsed={false}
                                 />
                               )}
@@ -710,7 +808,7 @@ function LogViewer() {
                                 selectedEntry.requestQueryParameters && (
                                   <JsonView
                                     value={selectedEntry.requestQueryParameters}
-                                    style={darkTheme}
+                                    style={jsonViewStyle}
                                     collapsed={false}
                                   />
                                 )}
@@ -745,7 +843,7 @@ function LogViewer() {
                               {selectedEntry.responseData ? (
                                 <JsonView
                                   value={selectedEntry.responseData}
-                                  style={darkTheme}
+                                  style={jsonViewStyle}
                                   collapsed
                                 />
                               ) : (

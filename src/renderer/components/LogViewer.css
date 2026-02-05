@@ -15,6 +15,36 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.json-view-theme-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.json-view-theme-setting .theme-label {
+  color: #858585;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.json-view-theme-setting .theme-select {
+  padding: 6px 10px;
+  background: #3c3c3c;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  color: #d4d4d4;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 100px;
+}
+
+.json-view-theme-setting .theme-select:focus {
+  outline: none;
+  border-color: #007acc;
 }
 
 .server-controls {
