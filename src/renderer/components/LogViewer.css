@@ -47,6 +47,27 @@
   border-color: #007acc;
 }
 
+.response-expand-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #d4d4d4;
+  font-size: 13px;
+  user-select: none;
+}
+
+.response-expand-setting input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #007acc;
+}
+
+.response-expand-label {
+  white-space: nowrap;
+}
+
 .server-controls {
   display: flex;
   gap: 12px;

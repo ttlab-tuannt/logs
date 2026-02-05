@@ -13,6 +13,7 @@ import { vscodeTheme } from '@uiw/react-json-view/vscode';
 import './LogViewer.css';
 
 const JSON_VIEW_THEME_KEY = 'logs-json-view-theme';
+const RESPONSE_JSON_EXPANDED_KEY = 'logs-response-json-expanded';
 type JsonViewThemeId =
   | 'basic'
   | 'dark'
@@ -141,6 +142,16 @@ function LogViewer() {
     }
     return 'dark';
   });
+  const [responseJsonExpanded, setResponseJsonExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem(RESPONSE_JSON_EXPANDED_KEY);
+      if (saved === 'true') return true;
+      if (saved === 'false') return false;
+    } catch {
+      // ignore
+    }
+    return false;
+  });
 
   const jsonViewStyle = JSON_VIEW_THEME_MAP[jsonViewTheme];
 
@@ -151,6 +162,17 @@ function LogViewer() {
       // ignore
     }
   }, [jsonViewTheme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        RESPONSE_JSON_EXPANDED_KEY,
+        String(responseJsonExpanded),
+      );
+    } catch {
+      // ignore
+    }
+  }, [responseJsonExpanded]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const filteredEntries =
@@ -548,6 +570,17 @@ function LogViewer() {
             ))}
           </select>
         </div>
+        <label className="response-expand-setting">
+          <input
+            type="checkbox"
+            checked={responseJsonExpanded}
+            onChange={(e) => setResponseJsonExpanded(e.target.checked)}
+            aria-label="Expand JSON in Response tab by default"
+          />
+          <span className="response-expand-label">
+            Expand JSON in Response tab
+          </span>
+        </label>
       </div>
 
       {tabs.length > 0 && (
@@ -844,7 +877,7 @@ function LogViewer() {
                                 <JsonView
                                   value={selectedEntry.responseData}
                                   style={jsonViewStyle}
-                                  collapsed
+                                  collapsed={!responseJsonExpanded}
                                 />
                               ) : (
                                 <div className="empty-content">

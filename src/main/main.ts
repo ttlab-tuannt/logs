@@ -71,8 +71,6 @@ ipcMain.handle('log-server:start', async (_event, port: number) => {
             parsedData = body;
           }
 
-          console.log('parsedData', parsedData);
-
           const logData = {
             port,
             timestamp: new Date().toISOString(),
